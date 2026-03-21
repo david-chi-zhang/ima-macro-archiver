@@ -1,0 +1,67 @@
+{
+  "_comment": "URL Library Template for Macro Economic Data Archiving",
+  "US": {
+    "GDP": { "GDPGrowth": "https://tradingeconomics.com/united-states/gdp-growth" },
+    "RealSector": {
+      "IndustrialProduction": "https://tradingeconomics.com/united-states/industrial-production-mom",
+      "RetailSales": "https://tradingeconomics.com/united-states/retail-sales",
+      "ConsumerConfidence": "https://tradingeconomics.com/united-states/consumer-confidence",
+      "UnemploymentRate": "https://tradingeconomics.com/united-states/unemployment-rate",
+      "NonFarmPayrolls": "https://tradingeconomics.com/united-states/non-farm-payrolls"
+    },
+    "PMI": {
+      "CompositePMI": "https://tradingeconomics.com/united-states/composite-pmi",
+      "ManufacturingPMI": "https://tradingeconomics.com/united-states/manufacturing-pmi",
+      "ServicesPMI": "https://tradingeconomics.com/united-states/services-pmi"
+    },
+    "Inflation": { "CPI": "https://tradingeconomics.com/united-states/inflation-cpi" }
+  },
+  "EuroArea": {
+    "GDP": { "GDPGrowth": "https://tradingeconomics.com/euro-area/gdp-growth" },
+    "RealSector": {
+      "IndustrialProduction": "https://tradingeconomics.com/euro-area/industrial-production-mom",
+      "RetailSales": "https://tradingeconomics.com/euro-area/retail-sales",
+      "ConsumerConfidence": "https://tradingeconomics.com/euro-area/consumer-confidence",
+      "UnemploymentRate": "https://tradingeconomics.com/euro-area/unemployment-rate"
+    },
+    "PMI": {
+      "CompositePMI": "https://tradingeconomics.com/euro-area/composite-pmi",
+      "ManufacturingPMI": "https://tradingeconomics.com/euro-area/manufacturing-pmi",
+      "ServicesPMI": "https://tradingeconomics.com/euro-area/services-pmi"
+    },
+    "Inflation": { "CPI": "https://tradingeconomics.com/euro-area/inflation-cpi" }
+  },
+  "Japan": {
+    "GDP": { "GDPGrowth": "https://tradingeconomics.com/japan/gdp-growth" },
+    "RealSector": {
+      "IndustrialProduction": "https://tradingeconomics.com/japan/industrial-production-mom",
+      "RetailSales": "https://tradingeconomics.com/japan/retail-sales-annual",
+      "ConsumerConfidence": "https://tradingeconomics.com/japan/consumer-confidence",
+      "UnemploymentRate": "https://tradingeconomics.com/japan/unemployment-rate"
+    },
+    "PMI": {
+      "CompositePMI": "https://tradingeconomics.com/japan/composite-pmi",
+      "ManufacturingPMI": "https://tradingeconomics.com/japan/manufacturing-pmi",
+      "ServicesPMI": "https://tradingeconomics.com/japan/services-pmi"
+    },
+    "Inflation": { "CPI": "https://tradingeconomics.com/japan/inflation-cpi" }
+  },
+  "SouthAfrica": {
+    "GDP": { "GDPGrowth": "https://tradingeconomics.com/south-africa/gdp-growth" },
+    "RealSector": {
+      "ManufacturingProduction": "https://tradingeconomics.com/south-africa/industrial-production",
+      "MiningProduction": "https://tradingeconomics.com/south-africa/mining-production",
+      "LeadingIndicator": "https://tradingeconomics.com/south-africa/leading-economic-index",
+      "RetailSales": "https://tradingeconomics.com/south-africa/retail-sales-annual"
+    },
+    "PMI": { "CompositePMI": "https://tradingeconomics.com/south-africa/composite-pmi" },
+    "Inflation": { "CPI": "https://tradingeconomics.com/south-africa/inflation-cpi" }
+  },
+  "Bangladesh": {
+    "Inflation": { "CPI": "https://tradingeconomics.com/bangladesh/inflation-cpi" }
+  },
+  "Global": {
+    "CommodityPrices": { "Gold": "TBD", "OilGas": "TBD", "Agriculture": "TBD", "Copper": "TBD" },
+    "InternationalTrade": "TBD"
+  }
+}

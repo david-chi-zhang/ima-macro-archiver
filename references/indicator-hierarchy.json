@@ -1,0 +1,83 @@
+{
+  "GDP": {
+    "type": "single",
+    "display_name": "GDP",
+    "sub_indicators": []
+  },
+  "PMI": {
+    "type": "group",
+    "display_name": "PMI",
+    "sub_indicators": [
+      "Composite PMI",
+      "Manufacturing PMI",
+      "Services PMI"
+    ]
+  },
+  "Inflation": {
+    "type": "group",
+    "display_name": "Inflation",
+    "sub_indicators": [
+      "CPI",
+      "PPI",
+      "Core Inflation"
+    ]
+  },
+  "Real Sector": {
+    "type": "group",
+    "display_name": "Real Sector",
+    "sub_indicators": [
+      "Industrial Production",
+      "Retail Sales",
+      "Consumer Confidence",
+      "Unemployment"
+    ]
+  },
+  "Monetary Policies": {
+    "type": "group",
+    "display_name": "Monetary Policies",
+    "sub_indicators": [
+      "Central Bank Policy Rate",
+      "Central Bank Asset Growth"
+    ]
+  },
+  "Fiscal Policies": {
+    "type": "group",
+    "display_name": "Fiscal Policies",
+    "sub_indicators": [
+      "Fiscal Deficits",
+      "Primary Deficits",
+      "Government Debt"
+    ]
+  },
+  "Financial Market": {
+    "type": "group",
+    "display_name": "Financial Market",
+    "sub_indicators": [
+      "Treasury Bond Yields",
+      "Stock Market Indices"
+    ]
+  },
+  "Capital Flows": {
+    "type": "group",
+    "display_name": "Capital Flows",
+    "sub_indicators": [
+      "Current Account",
+      "Exchange Rates"
+    ]
+  },
+  "Commodity Prices": {
+    "type": "group",
+    "display_name": "Commodity Prices",
+    "sub_indicators": [
+      "Gold",
+      "Oil & Gas",
+      "Agriculture",
+      "Copper"
+    ]
+  },
+  "International Trade": {
+    "type": "single",
+    "display_name": "International Trade",
+    "sub_indicators": []
+  }
+}
