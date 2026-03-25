@@ -223,18 +223,33 @@ fi
 
 **重要：IMA 不支持子页面，所有子指标整合到单一笔记中**
 
+---
+
+#### ⚠️ 格式规范（强制遵守）
+
+**子项名称格式**：
+1. **单词之间必须有空格**：`Industrial Production` ✅ 不是 `IndustrialProduction` ❌
+2. **使用黑体**：`**Industrial Production**`
+3. **子项名称与月份之间必须有空行**
+
+**月份格式**：
+- **黑体 + 句点 + 空格**：`**2026-01**. `
+- 后接正文内容
+
+---
+
+#### ✅ 正确格式示例
+
 ```markdown
 # {Country} - {Indicator} - {Year}
 
 ## 📊 {Indicator}
 
-### {Sub-Indicator 1}
+**{Sub-Indicator Name}**
 
 **{YYYY-MM}**. {Summary paragraph}
 
-**{YYYY-MM}**. {Previous data paragraph}
-
-### {Sub-Indicator 2}
+**{Sub-Indicator Name 2}**
 
 **{YYYY-MM}**. {Summary paragraph}
 
@@ -244,47 +259,70 @@ fi
 *国家：{Country} | 指标：{Indicator} | 年份：{Year}*
 ```
 
-**示例**（US - PMI - 2026）：
+#### 具体示例（Japan - RealSector - 2026）
 
 ```markdown
-# US - PMI - 2026
+# Japan - RealSector - 2026
 
-## 📊 PMI
+## 📊 Real Sector Indicators
 
-### Composite PMI
+**Industrial Production**
 
-**2026-02**. The S&P Global US Composite PMI dropped to 51.9 in February from 52.9 in the prior month...
+**2026-01**. Japan's industrial production rose 4.3% month-over-month in January 2026...
 
-**2026-01**. The S&P Global US Composite PMI rose to 52.9 in January...
+**Retail Sales**
 
-### Manufacturing PMI
+**2026-01**. Retail sales in Japan rose 1.8% yoy in January 2026...
 
-**2026-02**. The S&P Global US Manufacturing PMI fell to 51.6 in February...
+**Consumer Confidence**
 
-### Services PMI
+**2026-02**. Japan's consumer confidence index rose to 40.0 in February 2026...
 
-**2026-02**. The S&P Global US Services PMI fell to 51.7 in February...
+**Unemployment Rate**
+
+**2026-01**. Japan's unemployment rate was at 2.7% in January 2026...
 
 ---
 
-*数据来源：Trading Economics | 更新时间：2026-03-20 22:00*
-*国家：US | 指标：PMI | 年份：2026*
+*数据来源：Trading Economics | 更新时间：2026-03-25*
+*国家：Japan | 指标：RealSector | 年份：2026*
 ```
 
-**子指标处理策略**：
+---
+
+#### ❌ 错误格式（避免）
+
+```markdown
+# Japan - RealSector - 2026
+
+## 📊 Real Sector Indicators
+
+### IndustrialProduction     ← 错误：用了 ### 且名称内部无空格
+
+**2026-01**. Japan's...     ← 错误：子项名称与月份之间无空行
+
+### RetailSales             ← 错误：名称内部无空格
+
+**2026-01**. Retail...
+```
+
+---
+
+#### 子指标处理策略
 
 | 指标类型 | 子指标 | 处理方式 |
 |---------|--------|---------|
-| **PMI** | Composite PMI, Manufacturing PMI, Services PMI | 整合到同一笔记，用 `###` 分隔 |
-| **Inflation** | CPI, PPI, Core Inflation | 整合到同一笔记，用 `###` 分隔 |
+| **PMI** | Composite PMI, Manufacturing PMI, Services PMI | 整合到同一笔记，用 `**名称**` + 空行分隔 |
+| **Inflation** | CPI, PPI, Core Inflation | 整合到同一笔记，用 `**名称**` + 空行分隔 |
 | **GDP** | （无子指标） | 直接写入 |
-| **Real Sector** | Industrial Production, Retail Sales, etc. | 整合到同一笔记，用 `###` 分隔 |
+| **Real Sector** | Industrial Production, Retail Sales, etc. | 整合到同一笔记，用 `**名称**` + 空行分隔 |
 
 **好处**：
 - 搜索一次看到所有相关数据
 - 避免笔记碎片化（如 US-PMI 拆成 3 个笔记）
 - 符合 IMA 的扁平结构
 - 与 macro-archiver 的文档结构保持一致
+- **格式清晰易读**（子项名称与内容有明显分隔）
 
 ---
 
@@ -552,3 +590,30 @@ ima_api() {
 - 在群聊场景中只展示标题和摘要
 - 禁止展示笔记正文内容
 - 所有 API 调用使用用户自己的凭证
+
+---
+
+## Changelog
+
+### 2026-03-25 - 格式规范更新
+
+**用户反馈修正**：
+
+1. **子项名称格式**：
+   - ✅ 单词之间必须有空格：`Industrial Production`
+   - ❌ 禁止连写：`IndustrialProduction`
+
+2. **子项名称与月份之间**：
+   - ✅ 必须有空行分隔
+   - ❌ 禁止直接连接
+
+3. **格式示例**：
+   ```markdown
+   **Industrial Production**
+   
+   **2026-01**. Japan's industrial production rose 4.3%...
+   ```
+
+**影响范围**：Step 7 (Format Content for IMA)
+
+---
