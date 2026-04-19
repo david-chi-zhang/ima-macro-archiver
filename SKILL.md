@@ -189,31 +189,63 @@ ima_api "list_note_folder_by_cursor" '{"cursor": "0", "limit": 20}'
 
 ### Step 6: Search for Existing IMA Note
 
-**在写入之前，先搜索是否已存在对应笔记**：
+**⚠️ 强制规则：先搜索→追加，找不到→新建（禁止直接创建！）**
+
+**执行流程**：
 
 ```bash
-# 搜索笔记标题
-search_query="{Country} - {Indicator} - {Year}"
-search_result=$(ima_api "search_note_book" "{
-  \"search_type\": 0,
-  \"query_info\": {\"title\": \"$search_query\"},
-  \"start\": 0,
-  \"end\": 20
-}")
+# 1. 构建搜索关键词（按优先级尝试多个变体）
+search_variants=(
+  "{Country} - {Indicator} - {Year}"      # 标准格式
+  "{Country} - {Indicator}"               # 不带年份
+  "{Indicator} - {Year}"                  # 不带国家
+)
 
-# 检查是否找到匹配的笔记
-doc_id=$(echo "$search_result" | jq -r '.docs[0].doc.basic_info.docid // empty')
+# 2. 遍历搜索变体，找到第一个匹配的笔记
+doc_id=""
+for query in "${search_variants[@]}"; do
+  search_result=$(ima_api "search_note_book" "{
+    \"search_type\": 0,
+    \"query_info\": {\"title\": \"$query\"},
+    \"start\": 0,
+    \"end\": 20
+  }")
+  
+  # 检查搜索结果
+  found_id=$(echo "$search_result" | jq -r '.data.docs[]? | select(.doc.basic_info.folder_id == "$target_folder_id") | .doc.basic_info.docid' | head -1)
+  
+  if [ -n "$found_id" ]; then
+    doc_id="$found_id"
+    echo "✅ 找到已有笔记：$doc_id (搜索词：$query)"
+    break
+  fi
+done
 
+# 3. 决策：追加 or 新建
 if [ -n "$doc_id" ]; then
-  # 找到已有笔记 → 使用 append_doc 追加
-  echo "找到已有笔记：$doc_id"
+  # ✅ 找到已有笔记 → 必须使用 append_doc 追加
+  echo "📝 将追加数据到已有笔记"
   use_append=true
 else
-  # 未找到 → 使用 import_doc 新建
-  echo "未找到已有笔记，将创建新笔记"
+  # 🆕 未找到 → 使用 import_doc 新建
+  echo "🆕 未找到已有笔记，将创建新笔记"
   use_append=false
 fi
 ```
+
+**⚠️ 关键注意事项**：
+
+| 场景 | 正确做法 | 错误做法 |
+|------|---------|---------|
+| 找到已有笔记 | 使用 `append_doc` 追加 | ❌ 用 `import_doc` 覆盖 |
+| 未找到笔记 | 使用 `import_doc` 新建 + 指定 `folder_id` | ❌ 创建在默认位置 |
+| 找到多个匹配 | 选择 folder_id 匹配的那个 | ❌ 随机选一个 |
+| 笔记存在但 folder_id 错误 | 提示用户手动移动 | ❌ 忽略不管 |
+
+**为什么这条规则重要**：
+- 防止数据丢失（覆盖模式会删除历史数据）
+- 避免笔记碎片化（同一指标多个笔记）
+- 保持归档完整性（所有月份数据在一起）
 
 ---
 
@@ -328,38 +360,93 @@ fi
 
 ### Step 8: Write to IMA Note
 
-**重要：写入 IMA 后，必须同步保存到本地文件系统**
+**⚠️ 强制规则：根据 Step 6 的搜索结果决定写入方式**
 
-**Option A: Append to Existing Note**
+---
+
+#### Option A: 追加到已有笔记（优先）
+
+**适用场景**: Step 6 找到了已有笔记（`use_append=true`）
 
 ```bash
-# 追加内容到已有笔记（在末尾添加新月份数据）
+# 准备追加内容（只包含新数据，带分隔符）
+append_content="
+
+**{Sub-Indicator Name}**
+
+**$detected_month**. $new_data_paragraph"
+
+# 执行追加
 ima_api "append_doc" "{
   \"doc_id\": \"$doc_id\",
   \"content_format\": 1,
-  \"content\": \"\n\n**$detected_month**. $new_data_paragraph\"
+  \"content\": $(echo "$append_content" | jq -Rs .)
 }"
+
+echo "✅ 已追加数据到笔记：$doc_id"
 ```
 
-**Option B: Create New Note**
+**注意事项**：
+- 追加内容前加空行（`\n\n`），确保格式清晰
+- 只追加新月份数据，不要重复已有内容
+- 如果同月份已存在 → 作为新段落追加（不覆盖）
+
+---
+
+#### Option B: 创建新笔记（仅在未找到已有笔记时）
+
+**适用场景**: Step 6 未找到已有笔记（`use_append=false`）
 
 ```bash
-# 新建笔记
+# 准备完整笔记内容（包含所有子指标）
 create_result=$(ima_api "import_doc" "{
   \"content_format\": 1,
-  \"content\": \"$formatted_markdown_content\"
+  \"content\": $(echo "$formatted_markdown_content" | jq -Rs .),
+  \"folder_id\": \"$target_folder_id\"
 }")
 
 # 获取返回的 doc_id
-doc_id=$(echo "$create_result" | jq -r '.doc_id')
+doc_id=$(echo "$create_result" | jq -r '.data.note_id')
+
+echo "✅ 已创建新笔记：$doc_id"
 ```
 
-**Rules:**
-- Never overwrite existing data
-- If same month exists → Append as new paragraph
-- Preserve all existing months' data
-- **月份格式**：`**YYYY-MM**. `（黑体字 + 句点 + 空格，然后接正文）
-- **不使用空占位符**（如 "*No data available yet*"），文档只包含实际数据
+**注意事项**：
+- 创建时必须指定 `folder_id`（确保归属到正确国家笔记本）
+- 内容包含完整结构（标题 + 所有子指标）
+- 创建后验证 folder_id 是否正确
+
+---
+
+#### 写入后验证（强制）
+
+```bash
+# 验证：读取笔记确认写入成功
+verify_result=$(ima_api "get_doc_content" "{
+  \"doc_id\": \"$doc_id\",
+  \"target_content_format\": 0
+}")
+
+# 检查是否包含新数据
+if echo "$verify_result" | grep -q "$detected_month"; then
+  echo "✅ 验证通过：新数据已成功写入"
+else
+  echo "❌ 验证失败：新数据未找到，请检查"
+  exit 1
+fi
+```
+
+---
+
+**核心原则**：
+
+| 原则 | 说明 |
+|------|------|
+| **Never overwrite** | 永远不使用覆盖模式，保留所有历史数据 |
+| **Append first** | 优先追加，只有在找不到已有笔记时才新建 |
+| **Same month handling** | 如果同月份已存在 → 作为新段落追加（保留多个来源） |
+| **Format consistency** | 月份格式：`**YYYY-MM**. `（黑体 + 句点 + 空格） |
+| **No placeholders** | 不使用空占位符（如 "*No data available yet*"） |
 
 ---
 
@@ -594,6 +681,30 @@ ima_api() {
 ---
 
 ## Changelog
+
+### 2026-04-19 - 强制搜索规则更新
+
+**教训总结**（南非 Mining Production 更新事故）：
+
+**问题**：
+- ❌ 未先搜索已有笔记就直接创建新笔记
+- ❌ 导致同一指标出现重复笔记（docid: 7440977723683962 和 7451553761885927）
+- ❌ 需要事后删除重复笔记并重新追加
+
+**修正**：
+- ✅ Step 6 强制要求先搜索多个变体（标准格式 → 不带年份 → 不带国家）
+- ✅ Step 8 明确区分追加模式（append_doc）和新建模式（import_doc）
+- ✅ 添加验证步骤，确认写入成功后才汇报完成
+
+**新规则**：
+```
+先搜索 → 追加（优先）
+找不到 → 新建（仅当搜索无结果）
+```
+
+**影响范围**：Step 6（搜索逻辑）、Step 8（写入逻辑）
+
+---
 
 ### 2026-03-25 - 格式规范更新
 
