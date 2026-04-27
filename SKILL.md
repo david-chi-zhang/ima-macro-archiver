@@ -64,17 +64,96 @@ fi
 
 ---
 
-### Step 1: Parse Request
+### Step 1: Parse Request & Load URL Configuration
 
 - **Country**: US, EuroArea, Japan, SouthAfrica, Bangladesh, Global, China
-- **Indicator**: GDP, PMI, Inflation, etc.
+- **Indicator**: GDP, PMI, Inflation, RealSector, etc.
 - **Year**: Current year (e.g., 2026)
 
-**⚠️ 重要规则：选取指标严格遵循 url_library.json**
+---
 
-- 每个国家要更新什么指标，必须严格参照 `references/url-library-template.json` 中定义的结构
-- 禁止自行添加或推断指标，只更新 JSON 文件中明确列出的指标
-- 如果用户请求的指标不在 url_library.json 中，应提示用户该指标未配置
+#### 🔴 强制规则：URL 必须严格遵循 url-library-template.json
+
+**⚠️ 重要教训 (2026-04-27 错误记录)**:
+
+| 错误 | 后果 |
+|------|------|
+| 自行推断 URL（如 "应该是 /country/indicator"） | 使用了错误的数据类型（YoY vs MoM） |
+| 使用"看起来合理"但不是配置的 URL | 美国工业生产：用了 YoY 数据，应该用 MoM |
+| 假设某个 URL 是"标准"格式 | 南非零售销售：用了 MoM 数据，应该用 YoY |
+
+**正确做法**:
+
+```bash
+# === Step 1.1: 读取 URL 配置（强制！）===
+url_library="references/url-library-template.json"
+
+if [ ! -f "$url_library" ]; then
+    echo "❌ 未找到 URL 配置文件：$url_library"
+    exit 1
+fi
+
+# === Step 1.2: 根据国家和指标提取正确的 URL ===
+# 示例：US RealSector.IndustrialProduction
+url=$(jq -r ".${Country}.RealSector.${Indicator} // empty" "$url_library")
+
+# 如果第一层找不到，尝试直接查找（如 Inflation.CPI）
+if [ -z "$url" ]; then
+    url=$(jq -r ".${Country}.${Indicator} // empty" "$url_library")
+fi
+
+# === Step 1.3: 验证 URL 是否找到 ===
+if [ -z "$url" ] || [ "$url" = "null" ]; then
+    echo "❌ 未找到 ${Country} ${Indicator} 的 URL 配置"
+    echo "请检查 $url_library 中是否包含该指标"
+    exit 1
+fi
+
+echo "✅ 使用配置的 URL: $url"
+
+# === Step 1.4: 使用配置的 URL 抓取数据 ===
+data=$(web_fetch "$url" --extract-mode text --max-chars 2000)
+```
+
+---
+
+#### 📋 URL 配置示例 (url-library-template.json)
+
+```json
+{
+  "US": {
+    "RealSector": {
+      "IndustrialProduction": "https://tradingeconomics.com/united-states/industrial-production-mom",
+      "RetailSales": "https://tradingeconomics.com/united-states/retail-sales"
+    },
+    "Inflation": { "CPI": "https://tradingeconomics.com/united-states/inflation-cpi" }
+  },
+  "SouthAfrica": {
+    "RealSector": {
+      "RetailSales": "https://tradingeconomics.com/south-africa/retail-sales-annual"
+    }
+  }
+}
+```
+
+**注意 URL 命名规则**:
+- `-mom` 后缀 = 月环比数据 (Month-over-Month)
+- `-annual` 后缀 = 年同比数据 (Year-over-Year)
+- 无后缀 = 通常是年同比或水平值
+
+---
+
+#### ✅ 执行前检查清单
+
+- [ ] 已读取 `references/url-library-template.json`
+- [ ] 已从配置中提取正确的 URL（非自行推断）
+- [ ] 已验证 URL 存在且有效
+- [ ] 已记录使用的 URL 到日志
+
+**绝对禁止**:
+- ❌ 自行推断 URL 结构
+- ❌ 使用"看起来合理"但不是配置的 URL
+- ❌ 假设某个 URL 是"标准"格式
 
 ---
 
@@ -681,6 +760,42 @@ ima_api() {
 ---
 
 ## Changelog
+
+### 2026-04-27 - URL 配置强制规则更新
+
+**教训总结**（美国工业生产、南非零售销售数据错误事故）：
+
+**问题**：
+- ❌ 未读取 `url-library-template.json` 确认正确的 URL
+- ❌ 自行推断 URL 结构（如 "应该是 /country/indicator"）
+- ❌ 使用了错误的数据类型（YoY vs MoM）
+
+**具体错误**:
+
+| 国家 | 指标 | 应使用的 URL | 实际使用的 URL | 数据类型错误 |
+|------|------|-------------|---------------|-------------|
+| US | Industrial Production | `industrial-production-mom` | `industrial-production` | 应为 MoM，用了 YoY |
+| South Africa | Retail Sales | `retail-sales-annual` | `retail-sales` | 应为 YoY，用了 MoM |
+
+**后果**：
+- **美国工业生产**: 报告 +0.7% YoY，正确数据为 **-0.5% MoM**（创 2024 年 9 月以来最大跌幅）
+- **南非零售销售**: 报告 -1.0% MoM，正确数据为 **+1.6% YoY**（创 2024 年 9 月以来最弱增速）
+
+**修正**：
+- ✅ Step 1 强制要求先读取 `url-library-template.json`
+- ✅ 添加 URL 提取和验证的代码示例
+- ✅ 添加执行前检查清单
+- ✅ 明确禁止自行推断 URL
+
+**新规则**：
+```
+url-library-template.json 是唯一可信的 URL 来源
+任何自行推断的 URL 都是错误的
+```
+
+**影响范围**：Step 1（URL 配置读取）
+
+---
 
 ### 2026-04-19 - 强制搜索规则更新
 
